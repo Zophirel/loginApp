@@ -1,127 +1,149 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'form_widgets.dart';
 
-void main() => runApp(const MyLogin());
+void main() {
+  runApp(const LoginApp());
+}
 
-class MyLogin extends StatelessWidget {
-  const MyLogin({Key? key}) : super(key: key);
+class LoginApp extends StatelessWidget {
+  const LoginApp({Key? key}) : super(key: key);
 
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      home: Scaffold(
-        backgroundColor: Colors.blue,
-        body: StatefulLogin(),
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
       ),
+      home: const LoginPage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
-class StatefulLogin extends StatefulWidget {
-  const StatefulLogin({Key? key}) : super(key: key);
+class LoginPage extends StatefulWidget {
+  const LoginPage({Key? key, required this.title}) : super(key: key);
+  final String title;
 
   @override
-  State<StatefulLogin> createState() => _StatefulLoginState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _StatefulLoginState extends State<StatefulLogin> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController emailCtrl = TextEditingController();
-  final TextEditingController passCtrl = TextEditingController();
+class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
+  late AnimationController _controller;
+  late final Animation<Offset> _positionTransition = _controller
+      .drive(CurveTween(curve: Curves.easeInOut))
+      .drive(Tween<Offset>(
+          begin: const Offset(0.0, 0.0), end: const Offset(0.0, 0.1)));
 
-  ElevatedButton formSubmitBtn() {
-    return ElevatedButton(
-        onPressed: () {
-          // Validate will return true if the form is valid, or false if
-          // the form is invalid.
-          if (_formKey.currentState!.validate()) {
-            print(emailCtrl.text);
-            print(passCtrl.text);
-          }
-        },
-        child: const Icon(Icons.arrow_forward_sharp),
-        style: ElevatedButton.styleFrom(
-          minimumSize: const Size(50, 50),
-          shape: const CircleBorder(),
-        ));
+  double _opct = 1;
+  bool _is_signing_in = true;
+  bool _rev = false;
+
+  @override
+  void initState() {
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 300))
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          //Future.delayed(const Duration(milliseconds: 0), () {
+          _is_signing_in = !_is_signing_in;
+          _rev = !_rev;
+          inputanim();
+          //});
+        }
+      });
+    super.initState();
   }
 
-  TextFormField formLoginInput(String type, TextEditingController ctrl) {
-    Icon inputIcon = const Icon(Icons.person, color: Colors.blue);
-    String ph = "E-mail";
-    String errMsg = "Inserire una mail valida";
-    bool isItPass = false;
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-    if (type == "password") {
-      inputIcon = const Icon(Icons.lock, color: Colors.blue);
-      ph = "Password";
-      errMsg = "Inserire una password valida";
-      isItPass = true;
+  SlideTransition animationWrapper(Widget elem) {
+    return SlideTransition(
+        position: _positionTransition,
+        child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 300),
+            opacity: _opct,
+            child: SizedBox(width: 300, child: elem)));
+  }
+
+  void inputanim() {
+    setState(() {
+      if (!_rev) {
+        _controller.forward();
+        _opct = 0;
+      } else {
+        _controller.reverse();
+        _opct = 1;
+        _rev = !_rev;
+      }
+    });
+  }
+
+  List<Widget> initForgotPass() {
+    return [
+      animationWrapper(header("Let us recover your password")),
+      formWhiteSpace(20),
+      animationWrapper(formInput("email")),
+      formWhiteSpace(10),
+      animationWrapper(InkWell(
+        child: Text("remember?"),
+        onTap: () {
+          inputanim();
+        },
+      )),
+      formWhiteSpace(15),
+      submitBtn(Icons.arrow_forward)
+    ];
+  }
+
+  List<Widget> initLoginForm() {
+    return [
+      animationWrapper(header("Login")),
+      formWhiteSpace(20),
+      animationWrapper(formInput("email")),
+      formWhiteSpace(10),
+      animationWrapper(formInput("password")),
+      formWhiteSpace(10),
+      animationWrapper(InkWell(
+        child: const Text("forgot?"),
+        onTap: () {
+          inputanim();
+        },
+      )),
+      formWhiteSpace(15),
+      submitBtn(Icons.arrow_forward)
+    ];
+  }
+
+  List<Widget> formFields = [];
+
+  @override
+  Widget build(BuildContext context) {
+    if (_is_signing_in) {
+      formFields = initLoginForm();
+    } else {
+      formFields = initForgotPass();
     }
 
-    return TextFormField(
-      controller: ctrl,
-      obscureText: isItPass,
-      decoration: InputDecoration(
-        enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.transparent),
-          borderRadius: BorderRadius.circular(5.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.transparent),
-          borderRadius: BorderRadius.circular(5.5),
-        ),
-        prefixIcon: inputIcon,
-        hintText: ph,
-        hintStyle: const TextStyle(color: Colors.blue),
-        filled: true,
-        fillColor: Colors.blue[50],
-      ),
-      validator: (String? value) {
-        if (value == null || value.isEmpty) {
-          return errMsg;
-        }
-        return null;
-      },
-    );
-  }
+    Column col = Column(children: formFields);
 
-  Column formElements() {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: <Widget>[
-        Row(
-          children: const [
-            Text(
-              "Login",
-              style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold),
-            )
-          ],
-        ),
-        const SizedBox(height: 20),
-        formLoginInput("email", emailCtrl),
-        const SizedBox(height: 20),
-        formLoginInput("password", passCtrl),
-        const SizedBox(height: 20),
-        formSubmitBtn(),
-      ],
-    );
-  }
-
-  Container formCard() {
-    return Container(
-      padding: const EdgeInsets.all(30),
-      height: 320,
-      width: 300,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-      ),
-      child: formElements(),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Form(key: _formKey, child: Center(child: formCard()));
+    return Scaffold(
+        backgroundColor: Colors.blue[600],
+        body: Center(
+            child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: 290,
+                width: 300,
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.all(Radius.circular(20))),
+                child: col)));
   }
 }
