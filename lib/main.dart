@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'form_widgets.dart';
 
@@ -38,7 +37,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           begin: const Offset(0.0, 0.0), end: const Offset(0.0, 0.1)));
 
   double _opct = 1;
-  bool _is_signing_in = true;
+  bool _isSigningIn = true;
   bool _rev = false;
 
   @override
@@ -48,7 +47,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       ..addStatusListener((status) {
         if (status == AnimationStatus.completed) {
           //Future.delayed(const Duration(milliseconds: 0), () {
-          _is_signing_in = !_is_signing_in;
+          _isSigningIn = !_isSigningIn;
           _rev = !_rev;
           inputanim();
           //});
@@ -92,7 +91,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       animationWrapper(formInput("email")),
       formWhiteSpace(10),
       animationWrapper(InkWell(
-        child: Text("remember?"),
+        child: const Text("remember?"),
         onTap: () {
           inputanim();
         },
@@ -125,7 +124,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    if (_is_signing_in) {
+    if (_isSigningIn) {
       formFields = initLoginForm();
     } else {
       formFields = initForgotPass();
