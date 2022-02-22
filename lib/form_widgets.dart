@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 Text header(String text) {
   return Text(
     text,
+    textAlign: TextAlign.center,
     style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
   );
 }
@@ -61,12 +62,9 @@ Row forgotText(String text, Function inputanim, double whitespace) {
   );
 }
 
-ElevatedButton submitBtn(IconData btnIcon) {
+ElevatedButton submitBtn(String btnText, {IconData? btnIcon}) {
   return ElevatedButton(
       onPressed: () {},
-      child: Icon(btnIcon),
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(50, 50),
-        shape: const CircleBorder(),
-      ));
+      child: Text(btnText),
+      style: ElevatedButton.styleFrom(minimumSize: const Size(310, 40)));
 }
