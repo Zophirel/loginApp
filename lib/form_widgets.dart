@@ -1,4 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:email_validator/email_validator.dart';
+
+double spaceForAnimation(TextEditingController email,
+    [TextEditingController? pw, TextEditingController? pw2]) {
+  bool p1 = (pw == null) ? false : true;
+  bool p2 = (pw2 == null) ? false : true;
+
+  double space = 0;
+  if (!EmailValidator.validate(email.text)) {
+    space += 9;
+  }
+  if (p1) {
+    if (!validatePass(pw.text)) {
+      if (p2 == true) {
+        return space += 9 * 2;
+      } else {
+        return space += 9;
+      }
+    }
+  }
+  return space;
+}
 
 Text header(String text) {
   return Text(
@@ -14,34 +36,91 @@ SizedBox formWhiteSpace(double h) {
   );
 }
 
-TextFormField formInput(String type) {
-  Widget icon = const Icon(Icons.person, color: Colors.blue);
+bool validatePass(String value) {
+  String pattern =
+      r'^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[!@#\$&*~]).{8,}$';
+  RegExp regExp = RegExp(pattern);
+  return regExp.hasMatch(value);
+}
 
-  if (type == "password") {
-    icon = const Icon(Icons.lock, color: Colors.blue);
-  }
-
-  return TextFormField(
-    decoration: InputDecoration(
-      enabledBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.transparent),
-        borderRadius: BorderRadius.circular(5.5),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderSide: const BorderSide(color: Colors.transparent),
-        borderRadius: BorderRadius.circular(5.5),
-      ),
-      prefixIcon: icon,
-      hintText: type,
-      hintStyle: const TextStyle(color: Colors.blue),
-      filled: true,
-      fillColor: Colors.blue[50],
+InputDecoration emailDecoration() {
+  return InputDecoration(
+    enabledBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.transparent),
+      borderRadius: BorderRadius.circular(5.5),
     ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.transparent),
+      borderRadius: BorderRadius.circular(5.5),
+    ),
+    prefixIcon: const Icon(
+      Icons.email,
+      color: Colors.blue,
+    ),
+    hintText: "email",
+    hintStyle: const TextStyle(color: Colors.blue),
+    filled: true,
+    fillColor: Colors.blue[50],
+  );
+}
+
+TextFormField emailInput(TextEditingController txtCtrl) {
+  return TextFormField(
+    autovalidateMode: AutovalidateMode.onUserInteraction,
+    controller: txtCtrl,
+    decoration: emailDecoration(),
     validator: (String? value) {
-      if (value == null || value.isEmpty) {
-        return 'Please enter your email';
+      if (EmailValidator.validate(value!)) {
+        return null;
+      } else {
+        return "invalid email";
       }
-      return null;
+    },
+  );
+}
+
+InputDecoration passwordDecoration() {
+  return InputDecoration(
+    enabledBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.transparent),
+      borderRadius: BorderRadius.circular(5.5),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderSide: const BorderSide(color: Colors.transparent),
+      borderRadius: BorderRadius.circular(5.5),
+    ),
+    prefixIcon: const Icon(
+      Icons.password,
+      color: Colors.blue,
+    ),
+    suffixIcon:
+        IconButton(onPressed: () {}, icon: const Icon(Icons.visibility)),
+    hintText: "password",
+    hintStyle: const TextStyle(color: Colors.blue),
+    filled: true,
+    fillColor: Colors.blue[50],
+  );
+}
+
+TextFormField passwordInput(
+    {TextEditingController? currPass, TextEditingController? passToCheck}) {
+  return TextFormField(
+    controller: currPass,
+    decoration: passwordDecoration(),
+    validator: (String? value) {
+      if (validatePass(value!)) {
+        if (passToCheck != null) {
+          if (passToCheck.text == value) {
+            return null;
+          } else {
+            return "passwords do not match";
+          }
+        } else {
+          return null;
+        }
+      } else {
+        return "invalid password";
+      }
     },
   );
 }

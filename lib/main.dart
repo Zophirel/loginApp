@@ -1,7 +1,19 @@
 import 'package:flutter/material.dart';
 import 'form_widgets.dart';
+import 'package:email_validator/email_validator.dart';
+import 'package:http/http.dart' as http;
+import 'header.dart' as global;
 
-void main() {
+void main() async {
+  try {
+    var url = Uri.http('192.168.1.212:8080', '/helloworld');
+    print(url.port);
+    var response = await http.get(url);
+    print(response.body);
+    print('Response status: ${response.statusCode}');
+  } catch (_) {
+    print(_);
+  }
   runApp(const LoginApp());
 }
 
@@ -16,7 +28,12 @@ class LoginApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginPage(title: 'Flutter Demo Home Page'),
+      home: const Scaffold(
+        backgroundColor: Color(0xFF2196F3),
+        body: Center(
+          child: LoginPage(title: 'Flutter Demo Home Page'),
+        ),
+      ),
     );
   }
 }
@@ -34,7 +51,12 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late AnimationController _loginToSignUpCtrl;
   late final Animation<Offset> _positionTransition;
 
-  double _containerHeight = 364;
+  int _containerSpeedAnimation = 200;
+  static const double _loginContainerHeight = 363;
+  static const double _signUpContainerHeight = 410;
+  static const double _forgotPassContainerHeight = 278;
+  double _containerHeight = _loginContainerHeight;
+
   double _formElementsOpct = 1;
   int _animationStep = 0;
   bool _isSigningIn = true;
@@ -95,10 +117,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         _loginToSignUpCtrl.forward();
         _formElementsOpct = 0;
         if (_isSigningIn) {
-          _containerHeight = 406;
+          _containerHeight = _signUpContainerHeight;
         } else {
           Future.delayed(const Duration(milliseconds: 300), () {
-            _containerHeight = 364;
+            _containerHeight = _loginContainerHeight;
           });
         }
       } else {
@@ -116,10 +138,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         _formElementsOpct = 0;
         if (_isSigningIn) {
           Future.delayed(const Duration(milliseconds: 300), () {
-            _containerHeight = 278;
+            _containerHeight = _forgotPassContainerHeight;
           });
         } else {
-          _containerHeight = 364;
+          _containerHeight = _loginContainerHeight;
         }
       } else {
         _loginToPassCtrl.reverse();
@@ -129,18 +151,125 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     });
   }
 
+  bool _isPasswordWrong = false;
+  bool _isSecondPasswordWrong = false;
+  bool _isEmailWrong = false;
+
+  final TextEditingController _email = TextEditingController();
+  final TextEditingController _pass1 = TextEditingController();
+  final TextEditingController _pass2 = TextEditingController();
+
+  TextFormField passwordInput(TextEditingController pass) {
+    return TextFormField(
+      controller: pass,
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: passwordDecoration(),
+      onChanged: (value) {
+        if (validatePass(value)) {
+          if (_isPasswordWrong) {
+            setState(() {
+              _containerHeight -= 17;
+              _isPasswordWrong = false;
+            });
+          }
+        } else {
+          if (!_isPasswordWrong) {
+            setState(() {
+              _containerHeight += 17;
+              _isPasswordWrong = true;
+            });
+          }
+        }
+      },
+      validator: (String? value) {
+        if (validatePass(value!)) {
+          return null;
+        } else {
+          return "invalid password";
+        }
+      },
+    );
+  }
+
+  TextFormField repeatPasswordInput(TextEditingController passToCheck) {
+    return TextFormField(
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: passwordDecoration(),
+      onChanged: (value) {
+        if (passToCheck.text == value) {
+          setState(() {
+            if (_isSecondPasswordWrong) {
+              _containerHeight -= 17;
+            }
+            _isSecondPasswordWrong = false;
+          });
+        } else {
+          if (passToCheck.text != value) {}
+          setState(() {
+            if (!_isSecondPasswordWrong) {
+              _containerHeight += 17;
+            }
+            _isSecondPasswordWrong = true;
+          });
+        }
+      },
+      validator: (String? value) {
+        if (passToCheck.text == value) {
+          return null;
+        } else {
+          if (passToCheck.text != value) {
+            return "passwords are different";
+          }
+        }
+      },
+    );
+  }
+
+  TextFormField emailInput() {
+    return TextFormField(
+      autovalidateMode: AutovalidateMode.onUserInteraction,
+      decoration: emailDecoration(),
+      onChanged: (value) {
+        if (EmailValidator.validate(value)) {
+          setState(() {
+            if (_isEmailWrong) {
+              _containerHeight -= 17;
+              _isEmailWrong = false;
+            }
+          });
+        } else if (!_isEmailWrong) {
+          setState(() {
+            _containerHeight += 17;
+            _isEmailWrong = true;
+          });
+        }
+      },
+      validator: (String? value) {
+        if (EmailValidator.validate(value!)) {
+          return null;
+        } else {
+          return "invalid email";
+        }
+      },
+    );
+  }
+
   List<Widget> initForgotPass() {
     return [
       animationWrapper(header("Let us recover your password")),
       formWhiteSpace(20),
-      animationWrapper(formInput("email")),
+      animationWrapper(emailInput()),
       formWhiteSpace(10),
       animationWrapper(
         SizedBox(
           width: 300,
           child: InkWell(
             onTap: () {
-              loginToRecoverPassAnim();
+              if (_loginToPassCtrl.isAnimating ||
+                  _loginToSignUpCtrl.isAnimating) {
+              } else {
+                loginToRecoverPassAnim();
+              }
             },
             child: const Text(
               "Have you remembered?",
@@ -151,7 +280,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         ),
       ),
       formWhiteSpace(15),
-      animationWrapper(submitBtn("Send reset email")),
+      animationWrapper(ElevatedButton(
+          onPressed: () {
+            if (_formKey.currentState!.validate()) {
+              //pass1.dispose();
+              //pass2.dispose();
+              //Server code
+            }
+          },
+          child: const Text("Send reset email"),
+          style: ElevatedButton.styleFrom(minimumSize: const Size(310, 40))))
     ];
   }
 
@@ -159,26 +297,59 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return [
       animationWrapper(header("Welcome back")),
       formWhiteSpace(20),
-      animationWrapper(formInput("email")),
+      animationWrapper(emailInput()),
       formWhiteSpace(10),
-      animationWrapper(formInput("password")),
+      animationWrapper(passwordInput(_pass1)),
       formWhiteSpace(5),
       animationWrapper(
         SizedBox(
-            width: 300,
-            child: InkWell(
-              onTap: () {
+          width: 300,
+          child: InkWell(
+            onTap: () {
+              if (_loginToPassCtrl.isAnimating ||
+                  _loginToSignUpCtrl.isAnimating) {
+              } else {
                 loginToRecoverPassAnim();
-              },
-              child: const Text(
-                "Recover password",
-                textAlign: TextAlign.right,
-                style: TextStyle(fontSize: 15, color: Color(0xFF1E88E5)),
-              ),
-            )),
+              }
+            },
+            child: const Text(
+              "Recover password",
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 15, color: Color(0xFF1E88E5)),
+            ),
+          ),
+        ),
       ),
       formWhiteSpace(25),
-      animationWrapper(submitBtn("Log in")),
+      animationWrapper(
+        ElevatedButton(
+          onPressed: () {
+            double space = spaceForAnimation(_email, _pass1);
+            if (space > 0) {
+              if ((_loginContainerHeight + space) > _containerHeight) {
+                setState(
+                  () {
+                    _containerHeight += space;
+                  },
+                );
+                Future.delayed(
+                  Duration(milliseconds: _containerSpeedAnimation),
+                  () {},
+                );
+              }
+            }
+            if (_formKey.currentState!.validate()) {
+              //pass1.dispose();
+              //pass2.dispose();
+              //Server code
+            }
+          },
+          child: const Text("Log in"),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(310, 40),
+          ),
+        ),
+      ),
       formWhiteSpace(25),
       animationWrapper(
         Row(
@@ -190,7 +361,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             const SizedBox(width: 5),
             InkWell(
               onTap: () {
-                loginToSignUpAnim();
+                if (_loginToPassCtrl.isAnimating ||
+                    _loginToSignUpCtrl.isAnimating) {
+                } else {
+                  loginToSignUpAnim();
+                }
               },
               child: const Text(
                 "Sign up",
@@ -199,7 +374,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           ],
         ),
-      )
+      ),
     ];
   }
 
@@ -207,13 +382,43 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     return [
       animationWrapper(header("Welcome")),
       formWhiteSpace(20),
-      animationWrapper(formInput("email")),
+      animationWrapper(emailInput()),
       formWhiteSpace(10),
-      animationWrapper(formInput("password")),
+      animationWrapper(passwordInput(_pass1)),
       formWhiteSpace(10),
-      animationWrapper(formInput("repeat password")),
+      animationWrapper(repeatPasswordInput(_pass1)),
       formWhiteSpace(25),
-      animationWrapper(submitBtn("Sign Up")),
+      animationWrapper(ElevatedButton(
+          onPressed: () {
+            const double signUpContainerHeight = _signUpContainerHeight;
+            double space = spaceForAnimation(_email, _pass1, _pass2);
+
+            if (space > 0) {
+              if ((signUpContainerHeight + space) > _containerHeight) {
+                setState(
+                  () {
+                    _containerHeight += space;
+                  },
+                );
+              }
+              Future.delayed(
+                Duration(milliseconds: _containerSpeedAnimation),
+                () {
+                  if (_formKey.currentState!.validate()) {
+                    //pass1.dispose();
+                    //pass2.dispose();
+                    //Server code
+                  }
+                },
+              );
+            } else if (_formKey.currentState!.validate()) {
+              //pass1.dispose();
+              //pass2.dispose();
+              //Server code
+            }
+          },
+          child: const Text("Log in"),
+          style: ElevatedButton.styleFrom(minimumSize: const Size(310, 40)))),
       formWhiteSpace(25),
       animationWrapper(
         Row(
@@ -225,7 +430,11 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             const SizedBox(width: 5),
             InkWell(
               onTap: () {
-                loginToSignUpAnim();
+                if (_loginToPassCtrl.isAnimating ||
+                    _loginToSignUpCtrl.isAnimating) {
+                } else {
+                  loginToSignUpAnim();
+                }
               },
               child: const Text(
                 "Sign in",
@@ -240,32 +449,37 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   List<Widget> formFields = [];
 
+  final _loginKey = GlobalKey<FormState>();
+  final _signupKey = GlobalKey<FormState>();
+  final _recoverPassKey = GlobalKey<FormState>();
+  late GlobalKey<FormState> _formKey;
+
   @override
   Widget build(BuildContext context) {
-    print(
-        "login: $_isSigningIn, recover: $_isRecoveringPass, signup: $_isSigningUp");
     if (_isSigningIn) {
+      _formKey = _loginKey;
       formFields = initLoginForm();
     } else if (_isRecoveringPass) {
+      _formKey = _recoverPassKey;
       formFields = initForgotPass();
     } else if (_isSigningUp) {
+      _formKey = _signupKey;
       formFields = initSignUpForm();
     }
 
     Column col = Column(children: formFields);
 
-    return Scaffold(
-      backgroundColor: Colors.blue[600],
-      body: Center(
-        child: AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            height: _containerHeight,
-            width: 350,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.all(Radius.circular(20))),
-            child: col),
+    return AnimatedContainer(
+      duration: Duration(milliseconds: _containerSpeedAnimation),
+      height: _containerHeight,
+      width: 360,
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.all(Radius.circular(20))),
+      child: Form(
+        key: _formKey,
+        child: col,
       ),
     );
   }
