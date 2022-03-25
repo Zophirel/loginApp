@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'form_widgets.dart';
 import 'package:email_validator/email_validator.dart';
 import 'package:http/http.dart' as http;
-import 'header.dart' as global;
 
 void main() async {
   try {
