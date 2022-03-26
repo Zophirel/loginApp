@@ -12,7 +12,7 @@ double spaceForAnimation(TextEditingController email,
   }
   if (p1) {
     if (!validatePass(pw.text)) {
-      if (p2 == true) {
+      if (p2) {
         return space += 9 * 2;
       } else {
         return space += 9;
@@ -61,67 +61,6 @@ InputDecoration emailDecoration() {
     hintStyle: const TextStyle(color: Colors.blue),
     filled: true,
     fillColor: Colors.blue[50],
-  );
-}
-
-TextFormField emailInput(TextEditingController txtCtrl) {
-  return TextFormField(
-    autovalidateMode: AutovalidateMode.onUserInteraction,
-    controller: txtCtrl,
-    decoration: emailDecoration(),
-    validator: (String? value) {
-      if (EmailValidator.validate(value!)) {
-        return null;
-      } else {
-        return "invalid email";
-      }
-    },
-  );
-}
-
-InputDecoration passwordDecoration() {
-  return InputDecoration(
-    enabledBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.transparent),
-      borderRadius: BorderRadius.circular(5.5),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderSide: const BorderSide(color: Colors.transparent),
-      borderRadius: BorderRadius.circular(5.5),
-    ),
-    prefixIcon: const Icon(
-      Icons.password,
-      color: Colors.blue,
-    ),
-    suffixIcon:
-        IconButton(onPressed: () {}, icon: const Icon(Icons.visibility)),
-    hintText: "password",
-    hintStyle: const TextStyle(color: Colors.blue),
-    filled: true,
-    fillColor: Colors.blue[50],
-  );
-}
-
-TextFormField passwordInput(
-    {TextEditingController? currPass, TextEditingController? passToCheck}) {
-  return TextFormField(
-    controller: currPass,
-    decoration: passwordDecoration(),
-    validator: (String? value) {
-      if (validatePass(value!)) {
-        if (passToCheck != null) {
-          if (passToCheck.text == value) {
-            return null;
-          } else {
-            return "passwords do not match";
-          }
-        } else {
-          return null;
-        }
-      } else {
-        return "invalid password";
-      }
-    },
   );
 }
 

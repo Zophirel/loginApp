@@ -50,7 +50,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   late AnimationController _loginToSignUpCtrl;
   late final Animation<Offset> _positionTransition;
 
-  int _containerSpeedAnimation = 200;
+  final int _containerSpeedAnimation = 200;
   static const double _loginContainerHeight = 363;
   static const double _signUpContainerHeight = 410;
   static const double _forgotPassContainerHeight = 278;
@@ -158,8 +158,49 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final TextEditingController _pass1 = TextEditingController();
   final TextEditingController _pass2 = TextEditingController();
 
+  IconData eyeIcon = Icons.visibility;
+  bool _isVisible = true;
+  InputDecoration passwordDecoration() {
+    return InputDecoration(
+      enabledBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.transparent),
+        borderRadius: BorderRadius.circular(5.5),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.transparent),
+        borderRadius: BorderRadius.circular(5.5),
+      ),
+      prefixIcon: const Icon(
+        Icons.password,
+        color: Colors.blue,
+      ),
+      suffixIcon: IconButton(
+        onPressed: () {
+          setState(() {
+            if (eyeIcon == Icons.visibility) {
+              eyeIcon = Icons.visibility_off;
+              _isVisible = false;
+            } else {
+              eyeIcon = Icons.visibility;
+              _isVisible = true;
+            }
+          });
+        },
+        icon: Icon(
+          eyeIcon,
+          color: Colors.blue,
+        ),
+      ),
+      hintText: "password",
+      hintStyle: const TextStyle(color: Colors.blue),
+      filled: true,
+      fillColor: Colors.blue[50],
+    );
+  }
+
   TextFormField passwordInput(TextEditingController pass) {
     return TextFormField(
+      obscureText: _isVisible,
       controller: pass,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       decoration: passwordDecoration(),
@@ -216,9 +257,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         if (passToCheck.text == value) {
           return null;
         } else {
-          if (passToCheck.text != value) {
-            return "passwords are different";
-          }
+          return "passwords are different";
         }
       },
     );
@@ -282,6 +321,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
       animationWrapper(ElevatedButton(
           onPressed: () {
             if (_formKey.currentState!.validate()) {
+              print(
+                  "sign : $_isSigningIn, sign up $_isSigningUp, recover pass: $_isRecoveringPass");
               //pass1.dispose();
               //pass2.dispose();
               //Server code
@@ -333,11 +374,21 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 );
                 Future.delayed(
                   Duration(milliseconds: _containerSpeedAnimation),
-                  () {},
+                  () {
+                    if (_formKey.currentState!.validate()) {
+                      print(
+                          "sign : $_isSigningIn, sign up $_isSigningUp, recover pass: $_isRecoveringPass");
+                      //pass1.dispose();
+                      //pass2.dispose();
+                      //Server code
+                    }
+                  },
                 );
               }
-            }
-            if (_formKey.currentState!.validate()) {
+            } else if (_formKey.currentState!.validate()) {
+              print(
+                  "sign : $_isSigningIn, sign up $_isSigningUp, recover pass: $_isRecoveringPass");
+
               //pass1.dispose();
               //pass2.dispose();
               //Server code
@@ -404,16 +455,14 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 Duration(milliseconds: _containerSpeedAnimation),
                 () {
                   if (_formKey.currentState!.validate()) {
-                    //pass1.dispose();
-                    //pass2.dispose();
-                    //Server code
+                    print(
+                        "sign : $_isSigningIn, sign up $_isSigningUp, recover pass: $_isRecoveringPass");
                   }
                 },
               );
             } else if (_formKey.currentState!.validate()) {
-              //pass1.dispose();
-              //pass2.dispose();
-              //Server code
+              print(
+                  "sign : $_isSigningIn, sign up $_isSigningUp, recover pass: $_isRecoveringPass");
             }
           },
           child: const Text("Log in"),
